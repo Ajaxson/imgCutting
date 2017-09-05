@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+	<meta name="format-detection"content="telephone=no, email=no" />
+	<meta name="renderer" content="webkit">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="HandheldFriendly" content="true">
+	<meta name="MobileOptimized" content="320">
+	<meta name="screen-orientation" content="portrait">
+	<meta name="x5-orientation" content="portrait">
+	<meta name="full-screen" content="yes">
+	<meta name="x5-fullscreen" content="true">
+	<meta name="browsermode" content="application">
+	<meta name="x5-page-mode" content="app">
+	<meta name="msapplication-tap-highlight" content="no">
+	<meta name="viewport" content="width=640,target-densitydpi=device-dpi,maximum-scale=1.0, user-scalable=no">
+	<script>
+    	 function setWidth(a){if(/Andriod/i.test(navigator.userAgent)){var c,b=window.innerWidth;(b!=a)&&(c=b/a),document.addEventListener("DOMContentLoaded",function(){var d = document.getElementsByTagName("body")[0];d.style.webkitTransformOrigin = "left top";d.style.webkitTransform="scale("+c+")"},!1)}}setWidth(640);
+   	</script>
+
+	<title>移动端多图预览及裁剪工具</title>
+	<link rel="stylesheet" href="css/style.css">
+	<script src="js/fontSize.js" tips="这个正常是直接写页面的"></script>
+   	<script type="text/javascript" src="js/imgCutting.5.0.1.js"></script>
+   	<style>
+		.fix{ position: fixed; z-index: 10010; top: 0; left: 0; width: 100%; height: 80px; font-size: 0.24rem; line-height: 80px; text-align: center; background: #f3f3f3; }
+   		.headbox{ margin-top: 80px; }
+   		.head_picbox{ background: #e3e3e3;}
+   	</style>
+</head>
+<body>
+<div class="wrap">
+	<div class="fix">等待输出</div>
+	<div id="loading"><div></div></div>
+	<canvas id="canvas"></canvas>
+	<div class="yuanbox"><img src="images/ico_upfile.png" alt="" class="yuanpic" id="yuanpic"></div>
+	<div class="fixbox" id="fixbox">
+		<input type="file" id="head_file" multiple="multiple">
+		<div class="headbox">
+			<div class="head_picbox" id="head_picbox" style="width: 6.4rem; height: 6.4rem;" tips="就是这个容器装的"></div>
+		</div>	
+		<div class="btnbox">
+			<a href="javascript:void(0);" class="btn head_confirm" id="btnConfirm">保存</a>
+			<a href="javascript:void(0);" class="btn head_cancel" id="btnCancel">取消</a>
+		</div>
+	</div>
+	<script type="text/javascript">
+		var yuanpic = document.getElementById("yuanpic");
+		var Wi = parseFloat(document.querySelector(".head_picbox").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+		var Hi = parseFloat(document.querySelector(".head_picbox").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+
+		yuanpic.onclick =function(){  
+			var myPic = new pCutting({
+				boxname: "#head_picbox",
+				input: "#head_file",
+				setViewWi: Wi,
+				setViewHi: Hi,
+				btnConfirm: "#btnConfirm",
+				btnCancel: "#btnCancel",		
+				fileLoadFunc: function(){
+					loading.style.display = "block";
+				},
+				fileLoadEnd: function(){
+					loading.style.display = "none";
+					if(myPic.viewOption.imgLen == 1){
+						fixbox.style.display = "block";
+					}else{
+						alert("您选择了 "+myPic.viewOption.urls.length+" 张，多选是无法裁剪的")
+					}	
+				},
+				saveFunc: function(){
+					fixbox.style.display = "none";
+					yuanpic.src = myPic.viewOption.urls[0].newUrl;
+					console.log(myPic.viewOption);
+				},
+				cancelFunc: function(){
+					fixbox.style.display = "none";
+					console.log(myPic.viewOption);
+				}
+			})
+		};
+
+
+		
+
+	</script>
+</div>
+</body>
+</html>
