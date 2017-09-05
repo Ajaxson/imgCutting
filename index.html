@@ -49,8 +49,11 @@
 	</div>
 	<script type="text/javascript">
 		var yuanpic = document.getElementById("yuanpic");
+		// 获取隐藏元素宽高部分就不写了
 		var Wi = parseFloat(document.querySelector(".head_picbox").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
 		var Hi = parseFloat(document.querySelector(".head_picbox").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+		document.querySelector(".head_picbox").style.width = Wi + "px";
+		document.querySelector(".head_picbox").style.height = Hi + "px";
 
 		yuanpic.onclick =function(){  
 			var myPic = new pCutting({
