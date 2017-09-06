@@ -9,6 +9,7 @@
 @param(touchObj)  		//触摸位置名称 类型 png; 默认:是容器  可选
 @param(imgType)  		//输出格式 类型 png; 默认:png   可选  
 @param(reduceSize)  	//输出压缩比 类型：number; 默认:0.8； 可选
+@param(mixScale)  		//最小缩放 类型：number; 默认:0； 可选
 @param(setCanvasWi)  	//显示的宽度 类型：number; 默认: 容器的宽度 可选
 @param(setCanvasHi)  	//显示的高度 类型：number; 默认:容器的高度 可选
 @param(unSupportFunc)  	//不支持文件预览回调 类型：function; 默认: 空 可选
@@ -33,8 +34,9 @@
 		// 配置参数
 		that.option = {
 			touchObj: options.touchObj?document.querySelector(options.touchObj) : that.obj,  //触摸层，如果不填则是显示层本身
-			imgType: "png" || options.imgType,	//输出类型，
-			reduceSize: 0.8 || options.reduceSize, //压缩比例比例
+			imgType: options.imgType || "png",	//输出类型，
+			reduceSize: options.reduceSize || 0.8, //压缩比例比例
+			mixScale: options.mixScale || 0, //最小缩放倍数
 			// isCut: false || options.isCut,	//是否裁剪
 			setCanvasWi: options.setViewWi || parseInt(that.obj.clientWidth),	//显示的宽度
 			setCanvasHi: options.setViewHi || parseInt(that.obj.clientHeight),	//显示的高度
@@ -70,18 +72,25 @@
 		}
 		that.viewOption = {}; //此参数承载输出
 
-		// 这个可以忽略
-		that.obj.style.overflow = 'hidden';	
+		// 禁止触摸板触发保存
+		that.obj.style.WebkitUserSelect = "none";
+		that.option.touchObj.style.UserSelect = "none";
 		// 创建一个图片
-		that.newItem = document.createElement("img")		
-		that.obj.insertBefore(that.newItem, that.obj.childNodes[0]);				 
-		that.pic = that.obj.getElementsByTagName("img")[0];	
+		if(!document.querySelector("#viewImg")){
+			that.newItem = document.createElement("img")	
+			that.newItem.id = "viewImg";	
+			that.obj.insertBefore(that.newItem, that.obj.childNodes[0]);				 
+			that.pic = that.obj.getElementsByTagName("img")[0];	
+		}
 		// 创建一个canvas
-		that.newcanvas = document.createElement("canvas");
-		that.newcanvas.id = "cutCanvas";
-		that.newcanvas.style.display = "none";
-		that.obj.insertBefore(that.newcanvas,that.obj.childNodes[0]);	
-		that.canvas = that.obj.getElementsByTagName("canvas")[0];
+		if(!document.querySelector("#cutCanvas")){
+			that.newcanvas = document.createElement("canvas");
+			that.newcanvas.id = "cutCanvas";
+			that.newcanvas.style.display = "none";
+			that.obj.insertBefore(that.newcanvas,that.obj.childNodes[0]);	
+			that.canvas = that.obj.getElementsByTagName("canvas")[0];
+		}
+		
 
 		// 变量初始化
 		//触摸位置宽
@@ -168,48 +177,52 @@
 		}
 
 		// 开始触摸
-		that.obj.addEventListener("touchstart",function(e){
+		that.option.touchObj.addEventListener("touchstart",function(e){
 			e.preventDefault();
 			that.rOption.startTouch = e.targetTouches;
 			if(e.targetTouches.length > 1){
 				that.rOption.isDouble = true;
 			}
 			// 回掉刚触摸
+			document.querySelector(".fix").innerHTML = e.targetTouches.length + " s";
 			that._callBack(that.option.touchStartFunc);
 		},false)
 
 		// 触摸中
-		that.obj.addEventListener('touchmove', function(e) {
+		that.option.touchObj.addEventListener('touchmove', function(e) {
 			e.preventDefault();
 			that.rOption.moveTouch = e.targetTouches;
 			// 双指
 			if(that.rOption.moveTouch.length > 1 && that.rOption.isDouble == true){	
 				// 旋转角度
 				that.rOption.rotateNow = Math.ceil( that._getAngle(that.rOption.moveTouch[0], that.rOption.moveTouch[1]) - that._getAngle(that.rOption.startTouch[0], that.rOption.startTouch[1]) );	
-				that.rOption.rotateSum = that._sumAngle(that.rOption.rotateEnd, that.rOption.rotateNow);
+				that.rOption.rotateSum = that._sumAngle(that.rOption.rotateEnd, that.rOption.rotateNow) % 360; //n*360 + thisDeg 转多无谓
 				// 缩放倍数	
 				that.rOption.scaleNow = that._getScale(that.rOption.startTouch, that.rOption.moveTouch, that.touchLong);
-				that.rOption.scaleSum = that._sumScale(that.rOption.scaleEnd, that.rOption.scaleNow);			
+				that.rOption.scaleSum = that._sumScale(that.rOption.scaleEnd, that.rOption.scaleNow);		
+				that.rOption.scaleSum = that.rOption.scaleSum > that.option.mixScale? that.rOption.scaleSum : that.option.mixScale;	
 				// 执行移动
 				that._Transform(that.rOption.translateEnd, that.rOption.rotateSum, that.rOption.scaleSum);
-			}else if(that.rOption.isDouble == false){	
+			}else if(that.rOption.isDouble == false && that.rOption.moveTouch.length == 1){	
 				that.rOption.translateNow[0] = that._getTranslate(that.rOption.moveTouch[0], that.rOption.startTouch[0])[0];
 				that.rOption.translateNow[1] = that._getTranslate(that.rOption.moveTouch[0], that.rOption.startTouch[0])[1];
 				that.rOption.translateSum[0] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[0];
 				that.rOption.translateSum[1] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[1];
 				// 执行移动
 				that._Transform(that.rOption.translateSum, that.rOption.rotateEnd, that.rOption.scaleEnd);
-			}		
+			}	
+			document.querySelector(".fix").innerHTML = e.targetTouches.length + " m";	
 			// 回掉触摸中
 			that._callBack(that.option.touchMoveFunc);
 		},false);
 		
 		// 触摸完，把最新的统计值给到 end
-		that.obj.addEventListener("touchend",function(e){
+		that.option.touchObj.addEventListener("touchend",function(e){
 			that.rOption.translateEnd[0] = that.rOption.translateSum[0];
 			that.rOption.translateEnd[1] = that.rOption.translateSum[1];
 			that.rOption.rotateEnd = that.rOption.rotateSum;
 			that.rOption.scaleEnd = that.rOption.scaleSum;	
+			document.querySelector(".fix").innerHTML = e.targetTouches.length + " e";	
 			// 恢复是否双指 为 false
 			if(e.targetTouches.length == 0){
 				that.rOption.isDouble = false;
@@ -319,7 +332,7 @@
 		},
 
 		_Transform: function(ts,ro,sc){
-			document.querySelector(".fix").innerHTML = "X: "+ts[0] +"  Y: " +ts[1]+ "  ROT: " +ro+ "  SCALE: "+sc;
+			// document.querySelector(".fix").innerHTML = "X: "+ts[0] +"  Y: " +ts[1]+ "  ROT: " +ro+ "  SCALE: "+sc;
 			this.pic.style.webkitTransform = "translate3d("+ ts[0] +"px,"+ ts[1]+"px,0) "
 								 		 	+ "rotate(" + ro +"deg) "
 								 		 	+ "scale(" + sc +") ";				 		 		
