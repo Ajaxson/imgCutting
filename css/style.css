@@ -19,9 +19,9 @@ html,body { font-size: 10px; height: 100%; }
 .clear { clear:both; }
 img{display: block;}
 
-/*例子*/
+/*例子而已 没用的*/
 .wrap { position: relative; width: 100%; height: 100%; margin: 0 auto; overflow: hidden; }
-.yuanbox{ position: relative; top: 100%; width:2rem; height: 2rem; margin: -2rem auto 0 auto; line-height: 2rem; text-align:center; background: #eee; }
+.yuanbox{ position: absolute; bottom: 0; left: 50%; width:2rem; height: 2rem; margin-left: -1rem; line-height: 2rem; text-align:center; background: #eee; }
 .yuanbox img{ display: inline-block; width: 100%; }
 #loading{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2 }
 #loading>div{ position: relative; top: 40%; width: 2.6rem; height: 1.2rem; margin: auto; border-radius: 0.08rem; background: url(../images/loading04.gif) center no-repeat rgba(0,0,0,.4); background-size: auto 70%; }
@@ -32,4 +32,9 @@ img{display: block;}
 .btnbox{ position: absolute; bottom: 0.1rem; width: 100%; height: 0.8rem; text-align: center; }
 .btnbox a{ display: inline-block; width: 1.8rem; height: 0.8rem; margin: 0 0.2rem; border-radius: 0.08rem; line-height: 0.8rem; text-align: center; font-size: 0.28rem; color: #fff; background: #3898E8; }
 
-
+.fix{ position: fixed; z-index: 10010; top: 0; left: 0; width: 100%; height: 80px; font-size: 0.24rem; line-height: 80px; text-align: center; background: #f3f3f3; }
+.headbox{ position: relative; margin-top: 80px; }
+.head_picbox{ position: relative; width: 6.4rem; height: 6.4rem; overflow: hidden; background: #e3e3e3; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.touchDiv{ position: absolute; top: 0; left: 0; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.viewList{ position: relative; padding-top: 90px; }
+.viewList img{ display: inline-block; max-width: 30%; max-height: 200px; margin-left: 3px; }
