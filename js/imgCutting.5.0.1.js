@@ -4,14 +4,18 @@
 */
 
 /*
+*配置参数
 @param(boxname)  		//容器名称	类型 obj/str 必填
 @param(input)  	 		//文件筐名称 类型 obj/str; 必填
 @param(touchObj)  		//触摸位置名称 类型 png; 默认:是容器  可选
 @param(imgType)  		//输出格式 类型 png; 默认:png   可选  
 @param(reduceSize)  	//输出压缩比 类型：number; 默认:0.8； 可选
 @param(mixScale)  		//最小缩放 类型：number; 默认:0； 可选
-@param(setCanvasWi)  	//显示的宽度 类型：number; 默认: 容器的宽度 可选
-@param(setCanvasHi)  	//显示的高度 类型：number; 默认:容器的高度 可选
+@param(setLoadWi)  		//第一次压缩的尺寸 宽 类型：number; 默认: 照片本身尺寸 可选  如果设了宽又设高，那你就gg了，会变形
+@param(setLoadHi)  		//第一次压缩的尺寸 高 类型：number; 默认:照片本身尺寸 可选
+@param(setLoadZoom)  	//第一次压缩的不设宽高时 显示尺寸是 框的 几倍， 类型 number， 默认 1， 最少把 宽或高填充满 可选 
+@param(setCutWi)  		//截取的宽度 类型：number; 默认: 容器的宽度 可选
+@param(setCutHi)  		//截取的高度 类型：number; 默认:容器的高度 可选
 @param(unSupportFunc)  	//不支持文件预览回调 类型：function; 默认: 空 可选
 @param(fileTypeError) 	//格式错误回调回调 类型：function; 默认: 空 可选
 @param(fileChangeFunc)  //文件框改变后回调 类型：function; 默认: 空 可选
@@ -19,9 +23,24 @@
 @param(touchStartFunc)  //刚触摸时回调 类型：function; 默认: 空 可选
 @param(touchMoveFunc)  	//触摸中回调 类型：function; 默认: 空 可选
 @param(touchEndFunc)  	//触摸完回调 类型：function; 默认: 空 可选
-@param(saveFunc)  //保存时回调 类型：function; 默认: 空 可选
+@param(saveFunc)  		//保存时回调 类型：function; 默认: 空 可选
 @param(btnConfirm)  	//保存按钮 类型：str; 默认: 空 可选
-@param(btnCancel)  	//取消按钮 类型：str; 默认: 空 可选
+@param(btnCancel)  		//取消按钮 类型：str; 默认: 空 可选
+*/
+
+/*
+*返回参数 demo.viewOption  全部函数集合 ，以下属性 全部通过 demo.viewOption 获取
+@param(imgLen)  		//图片长度	类型 number
+@param(urls)  			//图片地址	类型 array，全部图片； 每个值 包含一个json{ }
+						demo.urls[i].yuanUrl  图片源地址，只经过base64转码
+						demo.urls[i].newUrl   图片压缩后，
+						demo.urls[i].yuanUrl  图片裁剪后，只有 经过裁剪才有这属性
+@param(translateSum)  	//触摸时偏移数	类型 array[x,y]
+@param(translateEnd)  	//触摸完偏移数	类型 array[x,y]
+@param(rotateSum)  		//触摸时旋转数	类型 number 单位 deg
+@param(rotateEnd)  		//触摸时旋转数	类型 number 单位 deg
+@param(scaleSum)  		//触摸时缩放倍数	类型 number
+@param(scaleEnd)  		//触摸完缩放倍数	类型 number
 */
 
 (function(window,doc){
@@ -29,17 +48,26 @@
 	pCutting  = function(options){
 		var that = this;
 
+		// 容器
 		that.obj = typeof(options.boxname) == 'object' ? options.boxname : document.querySelector(options.boxname);  
+		// 文件筐
 		that.input = typeof(options.input) == 'object' ? options.input : document.querySelector(options.input);	
+		// 操作的图片
+		that.pic = "";
+		// canvas
+		that.canvas = "";
+
 		// 配置参数
 		that.option = {
-			touchObj: options.touchObj?document.querySelector(options.touchObj) : that.obj,  //触摸层，如果不填则是显示层本身
+			touchObj: options.touchObj? document.querySelector(options.touchObj) : that.obj,  //触摸层，如果不填则是显示层本身
 			imgType: options.imgType || "png",	//输出类型，
 			reduceSize: options.reduceSize || 0.8, //压缩比例比例
-			mixScale: options.mixScale || 0, //最小缩放倍数
-			// isCut: false || options.isCut,	//是否裁剪
-			setCanvasWi: options.setViewWi || parseInt(that.obj.clientWidth),	//显示的宽度
-			setCanvasHi: options.setViewHi || parseInt(that.obj.clientHeight),	//显示的高度
+			mixScale: options.mixScale>0? options.mixScale : 0 || 0, //最小缩放倍数
+			setLoadWi: options.setLoadWi || '',		//第一次压缩的尺寸 宽
+			setLoadHi: options.setLoadHi || '',		//第一次压缩的尺寸 高
+			setCutWi: options.setCutWi || parseInt(that.obj.clientWidth),	//截取的宽度
+			setCutHi: options.setCutHi || parseInt(that.obj.clientHeight),	//截取的高度
+			setLoadZoom: options.setLoadZoom || 1,	//不设宽高时，图像与框的倍数
 			unSupportFunc: options.unSupportFunc || '', 	//不支持文件预览回调
 			fileTypeError: options.fileTypeError || '',		//格式错误回调
 			fileChangeFunc: options.fileChangeFunc || '',	//文件框改变后
@@ -56,7 +84,7 @@
 		// 输出参数
 		that.rOption = {
 			imgLen: 0,
-			urls: [{yuanUrl: "", oldUrl: "", newUrl: ""}],
+			urls: [{yuanUrl: "", newUrl: "", cutUrl: ""}],
 			translateNow: [0,0], //本次移动数组集
 			translateSum: [0,0],	//本次 + 已移动的书足迹	
 			translateEnd: [0,0], 	//放开后最终移动数组集
@@ -75,23 +103,6 @@
 		// 禁止触摸板触发保存
 		that.obj.style.WebkitUserSelect = "none";
 		that.option.touchObj.style.UserSelect = "none";
-		// 创建一个图片
-		if(!document.querySelector("#viewImg")){
-			that.newItem = document.createElement("img")	
-			that.newItem.id = "viewImg";	
-			that.obj.insertBefore(that.newItem, that.obj.childNodes[0]);				 
-			that.pic = that.obj.getElementsByTagName("img")[0];	
-		}
-		// 创建一个canvas
-		if(!document.querySelector("#cutCanvas")){
-			that.newcanvas = document.createElement("canvas");
-			that.newcanvas.id = "cutCanvas";
-			that.newcanvas.style.display = "none";
-			that.obj.insertBefore(that.newcanvas,that.obj.childNodes[0]);	
-			that.canvas = that.obj.getElementsByTagName("canvas")[0];
-		}
-		
-
 		// 变量初始化
 		//触摸位置宽
 		that.touchWi = parseInt(that.option.touchObj.style.width);
@@ -112,13 +123,18 @@
 			that._callBack(that.option.unSupportFunc);
 			return false;
 		}else{
-			that.input.addEventListener('change', _readFile, false);
-		}
-		
-		// 触发转二进制
-		function _readFile(){ 
+			that.input.addEventListener('change', function(){
+				// 调用创建 canvas 和 img
+				that._creatEl();
+				// 触发图片处理
+				_readFile();
+			}, false);
+		}	
+
+		// 转二进制
+		function _readFile(){ 	
 			that.rOption.imgLen = that.input.files.length;
-			if(that.i < that.input.files.length){
+			if(that.i < that.rOption.imgLen && that.rOption.imgLen != 0){
 				that.file = that.input.files[that.i]; 
 				if(!/image\/\w+/.test(that.file.type)){ 
 					// 文件格式不是图片
@@ -133,30 +149,20 @@
 					that.rOption.urls[that.i].yuanUrl = "data:application/octet-stream;"+this.result.substr(e.target.result.indexOf("base64,"));
 					that.imgbg = new Image();
 					that.imgbg.src = that.rOption.urls[that.i].yuanUrl;
-					that.imgbg.onload = function(){
+					that.imgbg.onload = function(){		
 						// 调用转base以后
 						that._afterBase(that.imgbg, that.i);
 						
 						// 触摸图渲染好后，初始 位置
 						that.pic.onload = function(){
-							// 初始位置偏移
-							if(that.pic.width > that.pic.height){
-								if(that.pic.width > that.option.setCanvasWi){
-									that.rOption.translateNow[0] = (that.option.setCanvasWi - that.pic.width) / 2;
-									// 一样
-									that.rOption.translateEnd[0] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[0];
-									that.rOption.translateEnd[1] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[1];
-									that._Transform(that.rOption.translateEnd, that.rOption.rotateEnd, that.rOption.scaleEnd);
-								}
-							}else{
-								if(that.pic.height > that.option.setCanvasHi){
-									that.rOption.translateNow[1] = (that.option.setCanvasHi - that.pic.height) / 2;
-									// 一样
-									that.rOption.translateEnd[0] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[0];
-									that.rOption.translateEnd[1] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[1];
-									that._Transform(that.rOption.translateEnd, that.rOption.rotateEnd, that.rOption.scaleEnd);
-								}
-							}
+							// 初始位置偏移,  类似 偏移 框的 一半  再反向移图的一半
+							that.rOption.translateNow[0] = (that.option.setCutHi - that.pic.width) / 2;
+							that.rOption.translateNow[1] = (that.option.setCutHi - that.pic.height) / 2;
+							that.rOption.translateEnd[0] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[0];
+							that.rOption.translateEnd[1] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[1];
+							that._Transform(that.rOption.translateEnd, that.rOption.rotateEnd, that.rOption.scaleEnd);
+
+							// 继续执行下一张
 							that.i += 1;
 							_readFile();
 						}
@@ -236,7 +242,7 @@
 			that.option.btnConfirm.onclick = function(){
 				if(that.rOption.imgLen == 1){
 					that._cuttingImg();
-					that.Refresh();			
+					that.Refresh();		
 					// 回掉保存
 					that._callBack(that.option.saveFunc);
 				}		
@@ -258,30 +264,73 @@
 	pCutting.prototype = {
 		that : this,
 
+		_creatEl: function(){
+			var that = this;
+			// 创建一个图片
+			that.pic = that.obj.querySelector(".viewImg");
+			if(that.pic == null){
+				that.newItem = document.createElement("img")	
+				that.newItem.className = "viewImg";	
+				that.obj.insertBefore(that.newItem, that.obj.childNodes[0]);				 
+				// that.pic = that.obj.getElementsByTagName("img")[0];	
+				that.pic = that.obj.querySelector(".viewImg");	
+			}
+
+			// 创建一个canvas
+			that.canvas = that.obj.querySelector(".cutCanvas");
+			if(that.canvas == null){
+				that.newcanvas = document.createElement("canvas");
+				that.newcanvas.className = "cutCanvas";
+				that.newcanvas.style.display = "none";
+				that.obj.insertBefore(that.newcanvas,that.obj.childNodes[0]);	
+				// that.canvas = that.obj.getElementsByTagName("canvas")[0];
+				that.canvas = that.obj.querySelector(".cutCanvas");
+			}
+		},
+
 		// 转 base 64后 用canvas压缩大小
 		// @param(imgBg) 转base 后的 图 
 		_afterBase: function(imgBg,i){
 			var that = this;
 			that.img_wi = imgBg.width;
 			that.img_hi = imgBg.height;
-			if(that.img_wi > that.img_hi){
-				that.img_hi = that.option.setCanvasHi;
-				that.img_wi = imgBg.width / (imgBg.height / that.option.setCanvasHi);
-				imgBg.width = that.img_wi;
-				imgBg.height = that.img_hi;
-			}else{
-				that.img_wi = that.option.setCanvasWi;
-				that.img_hi = imgBg.height / (imgBg.width / that.option.setCanvasWi);
-				imgBg.width = that.img_wi;
-				imgBg.height = that.img_hi;
+			// 自定义了压缩 宽
+			if(that.option.setLoadWi && !that.option.setLoadHi){
+				that.img_wi = that.option.setLoadWi;
+				that.img_hi = imgBg.height / (imgBg.width / that.img_wi);
 			}
+			// 自定义了压缩高
+			else if(!that.option.setLoadWi && that.option.setLoadHi){
+				that.img_hi = that.option.setLoadHi;
+				that.img_wi = imgBg.width / (imgBg.height / that.img_hi);
+			}
+			// 都设，扭曲
+			else if(that.option.setLoadHi && that.option.setLoadWi){
+				// 扭曲变形
+				that.img_wi = that.option.setLoadWi;
+				that.img_hi = that.option.setLoadHi;
+			}
+			// 都不设，根据框来调整
+			else if(!that.option.setLoadHi && !that.option.setLoadWi){
+				if(that.img_wi / that.option.setCutWi > that.img_hi / that.option.setCutHi){
+					that.img_hi = that.option.setCutHi * that.option.setLoadZoom;
+					that.img_wi = imgBg.width / (imgBg.height / that.img_hi);
+				}else{
+					that.img_wi = that.option.setCutWi *that.option.setLoadZoom;
+					that.img_hi = imgBg.height / (imgBg.width / that.img_wi);
+				}
+				
+			}
+
+			imgBg.width = that.img_wi;
+			imgBg.height = that.img_hi;
 			that.canvas.width = that.img_wi;
 			that.canvas.height = that.img_hi;
 			that.ctx = that.canvas.getContext('2d');	
 		 	that.ctx.clearRect (0, 0, 0, 0);
 			that.ctx.drawImage(imgBg, 0, 0, that.img_wi, that.img_hi); 
-			that.rOption.urls[i].oldUrl = that.canvas.toDataURL("image/"+that.option.imgType, that.option.reduceSize);
-			that.pic.src = that.rOption.urls[i].oldUrl;		
+			that.rOption.urls[i].newUrl = that.canvas.toDataURL("image/"+that.option.imgType, that.option.reduceSize);
+			that.pic.src = that.rOption.urls[i].newUrl;		
 		},
 
 		//本次移动的距离
@@ -332,8 +381,9 @@
 		},
 
 		_Transform: function(ts,ro,sc){
+			var that = this;
 			document.querySelector(".fix").innerHTML = "X: "+ts[0] +"  Y: " +ts[1]+ "  ROT: " +ro+ "  SCALE: "+sc;
-			this.pic.style.webkitTransform = "translate3d("+ ts[0] +"px,"+ ts[1]+"px,0) "
+			that.pic.style.webkitTransform = "translate3d("+ ts[0] +"px,"+ ts[1]+"px,0) "
 								 		 	+ "rotate(" + ro +"deg) "
 								 		 	+ "scale(" + sc +") ";				 		 		
 		},
@@ -346,16 +396,16 @@
 			var new_x  = (that.pic.width - new_width) / 2 + that.rOption.translateEnd[0];		
 			var new_y  = (that.pic.height - new_height) / 2 + that.rOption.translateEnd[1];
 			
-			that.canvas.width = that.option.setCanvasWi;
-			that.canvas.height = that.option.setCanvasHi;
-		 	that.ctx.clearRect (0, 0, that.option.setCanvasWi, that.option.setCanvasHi);
+			that.canvas.width = that.option.setCutWi;
+			that.canvas.height = that.option.setCutHi;
+		 	that.ctx.clearRect (0, 0, that.option.setCutWi, that.option.setCutHi);
 		 	var rtsX = new_width / 2 + new_x;	
 		 	var rtsY = new_height / 2 + new_y;
 		 	that.ctx.translate(rtsX,rtsY);
 		 	that.ctx.rotate(that.rOption.rotateEnd*(Math.PI/180));
 		 	that.ctx.translate(-rtsX,-rtsY);
 			that.ctx.drawImage(that.pic, new_x, new_y, new_width, new_height); 
-			that.rOption.urls[0].newUrl = that.canvas.toDataURL("image/"+that.option.imgType, 1);		
+			that.rOption.urls[0].cutUrl = that.canvas.toDataURL("image/"+that.option.imgType, 1);		
 		},
 
 		// 回调
@@ -382,10 +432,12 @@
 			that.rOption.imgLen = 0;	//图片数恢复为0
 			that.i = 0;	 //第几张恢复为0
 			for(var d=that.rOption.urls.length; d>0; d--){ that.rOption.urls.pop(); }
-			that.rOption.urls.length = 0;
+			that.rOption.urls.length = 0;	
+			// 清除元素
 			that.pic.remove();
-			that.canvas.remove();
-		}
+			that.canvas.remove();	
+		},
+
 	}
 })(window,document)
 
