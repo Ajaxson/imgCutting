@@ -9,7 +9,7 @@
 @param(input)  	 		//文件筐名称 类型 obj/str; 必填
 @param(touchObj)  		//触摸位置名称 类型 png; 默认:是容器  可选
 @param(imgType)  		//输出格式 类型 png; 默认:png   可选  
-@param(reduceSize)  	//输出压缩比 类型：number; 默认:0.8； 可选
+@param(reduceSize)  	//输出压缩比 类型：number; 默认:0.9； 可选
 @param(mixScale)  		//最小缩放 类型：number; 默认:0； 可选
 @param(setLoadWi)  		//第一次压缩的尺寸 宽 类型：number; 默认: 照片本身尺寸 可选  如果设了宽又设高，那你就gg了，会变形
 @param(setLoadHi)  		//第一次压缩的尺寸 高 类型：number; 默认:照片本身尺寸 可选
@@ -61,7 +61,7 @@
 		that.option = {
 			touchObj: options.touchObj? document.querySelector(options.touchObj) : that.obj,  //触摸层，如果不填则是显示层本身
 			imgType: options.imgType || "png",	//输出类型，
-			reduceSize: options.reduceSize || 0.8, //压缩比例比例
+			reduceSize: options.reduceSize || 0.9, //压缩比例比例
 			mixScale: options.mixScale>0? options.mixScale : 0 || 0, //最小缩放倍数
 			setLoadWi: options.setLoadWi || '',		//第一次压缩的尺寸 宽
 			setLoadHi: options.setLoadHi || '',		//第一次压缩的尺寸 高
