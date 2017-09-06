@@ -184,7 +184,7 @@
 				that.rOption.isDouble = true;
 			}
 			// 回掉刚触摸
-			document.querySelector(".fix").innerHTML = e.targetTouches.length + " s";
+			// document.querySelector(".fix").innerHTML = e.targetTouches.length + " s";
 			that._callBack(that.option.touchStartFunc);
 		},false)
 
@@ -211,7 +211,7 @@
 				// 执行移动
 				that._Transform(that.rOption.translateSum, that.rOption.rotateEnd, that.rOption.scaleEnd);
 			}	
-			document.querySelector(".fix").innerHTML = e.targetTouches.length + " m";	
+			// document.querySelector(".fix").innerHTML = e.targetTouches.length + " m";	
 			// 回掉触摸中
 			that._callBack(that.option.touchMoveFunc);
 		},false);
@@ -332,7 +332,7 @@
 		},
 
 		_Transform: function(ts,ro,sc){
-			// document.querySelector(".fix").innerHTML = "X: "+ts[0] +"  Y: " +ts[1]+ "  ROT: " +ro+ "  SCALE: "+sc;
+			document.querySelector(".fix").innerHTML = "X: "+ts[0] +"  Y: " +ts[1]+ "  ROT: " +ro+ "  SCALE: "+sc;
 			this.pic.style.webkitTransform = "translate3d("+ ts[0] +"px,"+ ts[1]+"px,0) "
 								 		 	+ "rotate(" + ro +"deg) "
 								 		 	+ "scale(" + sc +") ";				 		 		
