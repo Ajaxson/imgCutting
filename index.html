@@ -25,22 +25,21 @@
 	<link rel="stylesheet" href="css/style.css">
 	<script src="js/fontSize.js" tips="这个正常是直接写页面的"></script>
    	<script type="text/javascript" src="js/imgCutting.5.0.1.js"></script>
-   	<style>
-		.fix{ position: fixed; z-index: 10010; top: 0; left: 0; width: 100%; height: 80px; font-size: 0.24rem; line-height: 80px; text-align: center; background: #f3f3f3; }
-   		.headbox{ margin-top: 80px; }
-   		.head_picbox{ background: #e3e3e3;}
-   	</style>
 </head>
 <body>
 <div class="wrap">
 	<div class="fix">等待输出</div>
+	<div class="viewList">
+		
+	</div>
 	<div id="loading"><div></div></div>
 	<canvas id="canvas"></canvas>
 	<div class="yuanbox"><img src="images/ico_upfile.png" alt="" class="yuanpic" id="yuanpic"></div>
 	<div class="fixbox" id="fixbox">
 		<input type="file" id="head_file" multiple="multiple">
 		<div class="headbox">
-			<div class="head_picbox" id="head_picbox" style="width: 6.4rem; height: 6.4rem;" tips="就是这个容器装的"></div>
+			<div class="head_picbox" id="head_picbox" tips="就是这个容器装的"></div>
+			<div class="touchDiv" style="width: 6.4rem; height: 6.4rem;"></div>
 		</div>	
 		<div class="btnbox">
 			<a href="javascript:void(0);" class="btn head_confirm" id="btnConfirm">保存</a>
@@ -50,15 +49,16 @@
 	<script type="text/javascript">
 		var yuanpic = document.getElementById("yuanpic");
 		// 获取隐藏元素宽高部分就不写了
-		var Wi = parseFloat(document.querySelector(".head_picbox").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
-		var Hi = parseFloat(document.querySelector(".head_picbox").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
-		document.querySelector(".head_picbox").style.width = Wi + "px";
-		document.querySelector(".head_picbox").style.height = Hi + "px";
+		var Wi = parseFloat(document.querySelector(".touchDiv").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+		var Hi = parseFloat(document.querySelector(".touchDiv").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+		document.querySelector(".touchDiv").style.width = Wi + "px";
+		document.querySelector(".touchDiv").style.height = Hi + "px";
 
 		yuanpic.onclick =function(){  
 			var myPic = new pCutting({
 				boxname: "#head_picbox",
 				input: "#head_file",
+				touchObj: ".touchDiv",
 				setViewWi: Wi,
 				setViewHi: Hi,
 				btnConfirm: "#btnConfirm",
@@ -71,7 +71,12 @@
 					if(myPic.viewOption.imgLen == 1){
 						fixbox.style.display = "block";
 					}else{
-						alert("您选择了 "+myPic.viewOption.urls.length+" 张，多选是无法裁剪的")
+						var h = "";
+						for(var l=0; l<myPic.viewOption.imgLen; l++){
+							h += '<img src="'+ myPic.viewOption.urls[l].oldUrl +'">';
+						}
+						document.querySelector(".viewList").innerHTML = h;
+						alert("您选择了 "+myPic.viewOption.urls.length+" 张，多选是无法裁剪的");
 					}	
 				},
 				saveFunc: function(){
@@ -85,9 +90,6 @@
 				}
 			})
 		};
-
-
-		
 
 	</script>
 </div>
