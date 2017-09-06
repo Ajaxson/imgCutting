@@ -17,10 +17,6 @@
 	<meta name="x5-page-mode" content="app">
 	<meta name="msapplication-tap-highlight" content="no">
 	<meta name="viewport" content="width=640,target-densitydpi=device-dpi,maximum-scale=1.0, user-scalable=no">
-	<script>
-    	 function setWidth(a){if(/Andriod/i.test(navigator.userAgent)){var c,b=window.innerWidth;(b!=a)&&(c=b/a),document.addEventListener("DOMContentLoaded",function(){var d = document.getElementsByTagName("body")[0];d.style.webkitTransformOrigin = "left top";d.style.webkitTransform="scale("+c+")"},!1)}}setWidth(640);
-   	</script>
-
 	<title>移动端多图预览及裁剪工具</title>
 	<link rel="stylesheet" href="css/style.css">
 	<script src="js/fontSize.js" tips="这个正常是直接写页面的"></script>
@@ -29,51 +25,53 @@
 <body>
 <div class="wrap">
 	<div class="fix">等待输出</div>
-	<div class="viewList">
-		
-	</div>
+	<div class="viewList">一个寂静的 等待多图的 容器</div>
 	<div id="loading"><div></div></div>
-	<canvas id="canvas"></canvas>
 	<div class="yuanbox"><img src="images/ico_upfile.png" alt="" class="yuanpic" id="yuanpic"></div>
+
 	<div class="fixbox" id="fixbox">
-		<input type="file" id="head_file" multiple="multiple">
+		<input type="file" id="head_file" multiple="multiple" tips="文件框">
 		<div class="headbox">
 			<div class="head_picbox" id="head_picbox" tips="就是这个容器装的"></div>
-			<div class="touchDiv" style="width: 6.4rem; height: 6.4rem;"></div>
+			<div class="touchDiv" style="width: 6.4rem; height: 6.4rem;" tips="触摸板"></div>
 		</div>	
 		<div class="btnbox">
 			<a href="javascript:void(0);" class="btn head_confirm" id="btnConfirm">保存</a>
 			<a href="javascript:void(0);" class="btn head_cancel" id="btnCancel">取消</a>
 		</div>
 	</div>
+	
 	<script type="text/javascript">
-		var yuanpic = document.getElementById("yuanpic");
-		// 获取隐藏元素宽高部分就不写了
+
+		// 获取隐藏元素宽高部分就不写了，，自己用jq或者自己写个方法
 		var Wi = parseFloat(document.querySelector(".touchDiv").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
 		var Hi = parseFloat(document.querySelector(".touchDiv").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
 		document.querySelector(".touchDiv").style.width = Wi + "px";
 		document.querySelector(".touchDiv").style.height = Hi + "px";
 
+		// 这才是正文
+		var yuanpic = document.getElementById("yuanpic");
 		yuanpic.onclick =function(){  
 			var myPic = new pCutting({
 				boxname: "#head_picbox",
 				input: "#head_file",
 				touchObj: ".touchDiv",
-				setViewWi: Wi,
-				setViewHi: Hi,
+				setLoadZoom: 1.2,
+				setCutWi: Wi,
+				setCutHi: Hi,
 				btnConfirm: "#btnConfirm",
 				btnCancel: "#btnCancel",		
-				fileLoadFunc: function(){
+				fileChangeFunc: function(){	 //图片加载中回调
 					loading.style.display = "block";
 				},
-				fileLoadEnd: function(){
+				fileLoadEnd: function(){	//图片加载完回调
 					loading.style.display = "none";
 					if(myPic.viewOption.imgLen == 1){
 						fixbox.style.display = "block";
 					}else{
 						var h = "";
 						for(var l=0; l<myPic.viewOption.imgLen; l++){
-							h += '<img src="'+ myPic.viewOption.urls[l].oldUrl +'">';
+							h += '<img src="'+ myPic.viewOption.urls[l].newUrl +'">';
 						}
 						document.querySelector(".viewList").innerHTML = h;
 						alert("您选择了 "+myPic.viewOption.urls.length+" 张，多选是无法裁剪的");
@@ -81,16 +79,14 @@
 				},
 				saveFunc: function(){
 					fixbox.style.display = "none";
-					yuanpic.src = myPic.viewOption.urls[0].newUrl;
+					yuanpic.src = myPic.viewOption.urls[0].cutUrl;
 					console.log(myPic.viewOption);
 				},
 				cancelFunc: function(){
 					fixbox.style.display = "none";
-					console.log(myPic.viewOption);
 				}
 			})
 		};
-
 	</script>
 </div>
 </body>
