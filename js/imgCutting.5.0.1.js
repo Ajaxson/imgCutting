@@ -7,15 +7,17 @@
 *配置参数
 @param(boxname)  		//容器名称	类型 obj/str 必填
 @param(input)  	 		//文件筐名称 类型 obj/str; 必填
-@param(touchObj)  		//触摸位置名称 类型 png; 默认:是容器  可选
-@param(imgType)  		//输出格式 类型 png; 默认:png   可选  
-@param(reduceSize)  	//输出压缩比 类型：number; 默认:0.9； 可选
+@param(touchObj)  		//触摸位置名称 类型 str; 默认:是容器  可选
+@param(imgType)  		//输出格式 类型 str; 默认:png   可选  
+@param(reduceSize)  	//输出压缩比 类型：number; 默认:0.8； 可选
 @param(mixScale)  		//最小缩放 类型：number; 默认:0； 可选
-@param(setLoadWi)  		//第一次压缩的尺寸 宽 类型：number; 默认: 照片本身尺寸 可选  如果设了宽又设高，那你就gg了，会变形
+//是否需要裁剪
+@param(setLoadWi)  		//第一次压缩的尺寸 宽 类型：number; 默认: 照片本身尺寸 可选  
 @param(setLoadHi)  		//第一次压缩的尺寸 高 类型：number; 默认:照片本身尺寸 可选
-@param(setLoadZoom)  	//第一次压缩的不设宽高时 显示尺寸是 框的 几倍， 类型 number， 默认 1， 最少把 宽或高填充满 可选 
-@param(setCutWi)  		//截取的宽度 类型：number; 默认: 容器的宽度 可选
-@param(setCutHi)  		//截取的高度 类型：number; 默认:容器的高度 可选
+                        //如果设了宽又设高，那么看 哪个和 原图比例 大，，例如， 原图宽 / 设定宽 = 1， 原图高 /设定高=0.1  那么 宽撑满，高随便
+@param(unCut)  			//是否阻止裁剪 类型：bool; 默认 false 可以裁剪， true，不裁剪: 可选
+@param(setViewWi)  		//操控框的宽度 类型：number; 默认: 容器的宽度 可选
+@param(setViewHi)  		//操控框高度 类型：number; 默认:容器的高度 可选
 @param(unSupportFunc)  	//不支持文件预览回调 类型：function; 默认: 空 可选
 @param(fileTypeError) 	//格式错误回调回调 类型：function; 默认: 空 可选
 @param(fileChangeFunc)  //文件框改变后回调 类型：function; 默认: 空 可选
@@ -24,8 +26,6 @@
 @param(touchMoveFunc)  	//触摸中回调 类型：function; 默认: 空 可选
 @param(touchEndFunc)  	//触摸完回调 类型：function; 默认: 空 可选
 @param(saveFunc)  		//保存时回调 类型：function; 默认: 空 可选
-@param(btnConfirm)  	//保存按钮 类型：str; 默认: 空 可选
-@param(btnCancel)  		//取消按钮 类型：str; 默认: 空 可选
 */
 
 /*
@@ -61,13 +61,14 @@
 		that.option = {
 			touchObj: options.touchObj? document.querySelector(options.touchObj) : that.obj,  //触摸层，如果不填则是显示层本身
 			imgType: options.imgType || "png",	//输出类型，
-			reduceSize: options.reduceSize || 0.9, //压缩比例比例
+			reduceSize: options.reduceSize || 0.8, //压缩比例比例
 			mixScale: options.mixScale>0? options.mixScale : 0 || 0, //最小缩放倍数
 			setLoadWi: options.setLoadWi || '',		//第一次压缩的尺寸 宽
 			setLoadHi: options.setLoadHi || '',		//第一次压缩的尺寸 高
-			setCutWi: options.setCutWi || parseInt(that.obj.clientWidth),	//截取的宽度
-			setCutHi: options.setCutHi || parseInt(that.obj.clientHeight),	//截取的高度
-			setLoadZoom: options.setLoadZoom || 1,	//不设宽高时，图像与框的倍数
+			unCut: options.unCut || false,			//是否需要裁剪
+			setViewWi: options.setViewWi || parseInt(that.obj.clientWidth),	//操控层的宽度
+			setViewHi: options.setViewHi || parseInt(that.obj.clientHeight),	//操控层的高度
+			setCutWi: options.setCutWi || that.option.setViewWi,          //裁剪的 宽， 不一定是最后截取的大小，高度会根据宽比例
 			unSupportFunc: options.unSupportFunc || '', 	//不支持文件预览回调
 			fileTypeError: options.fileTypeError || '',		//格式错误回调
 			fileChangeFunc: options.fileChangeFunc || '',	//文件框改变后
@@ -77,8 +78,6 @@
 			touchEndFunc: options.touchEndFunc || null,	 
 			saveFunc: options.saveFunc || '',
 			cancelFunc: options.cancelFunc || '',
-			btnConfirm: document.querySelector(options.btnConfirm) || '', 
-			btnCancel: document.querySelector(options.btnCancel) || '', 
 		}
 	
 		// 输出参数
@@ -105,11 +104,11 @@
 		that.option.touchObj.style.UserSelect = "none";
 		// 变量初始化
 		//触摸位置宽
-		that.touchWi = parseInt(that.option.touchObj.style.width);
+		that.touchWi = 0;
 		//触摸位置的高 
-		that.touchHi = parseInt(that.option.touchObj.style.height);	
+		that.touchHi = 0;	
 		// 触摸位置 对角长度
-		that.touchLong  = ( Math.sqrt(Math.pow(that.touchWi,2) + Math.pow(that.touchHi,2)) ).toFixed(2);
+		that.touchLong  = 0;
 		// 第几张图片
 		that.i = 0;
 
@@ -156,8 +155,8 @@
 						// 触摸图渲染好后，初始 位置
 						that.pic.onload = function(){
 							// 初始位置偏移,  类似 偏移 框的 一半  再反向移图的一半
-							that.rOption.translateNow[0] = (that.option.setCutHi - that.pic.width) / 2;
-							that.rOption.translateNow[1] = (that.option.setCutHi - that.pic.height) / 2;
+							that.rOption.translateNow[0] = (that.option.setViewWi - that.pic.width) / 2;
+							that.rOption.translateNow[1] = (that.option.setViewHi - that.pic.height) / 2;
 							that.rOption.translateEnd[0] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[0];
 							that.rOption.translateEnd[1] = that._sumTranslate(that.rOption.translateEnd, that.rOption.translateNow)[1];
 							that._Transform(that.rOption.translateEnd, that.rOption.rotateEnd, that.rOption.scaleEnd);
@@ -171,7 +170,7 @@
 			} 
 			else if(that.rOption.imgLen != 0){
 				// 调用 渲染完后
-				that.viewOption = JSON.parse( JSON.stringify(that.rOption) );
+				that._returnView();
 				var loadTime = setTimeout(function(){
 					that._callBack(that.option.fileLoadEnd);
 					clearTimeout(loadTime);
@@ -189,8 +188,15 @@
 			if(e.targetTouches.length > 1){
 				that.rOption.isDouble = true;
 			}
+
+			//触摸位置宽
+			that.touchWi = parseInt(that.option.touchObj.clientWidth);
+			//触摸位置的高 
+			that.touchHi = parseInt(that.option.touchObj.clientWidth);	
+			// 触摸位置 对角长度
+			that.touchLong  = ( Math.sqrt(Math.pow(that.touchWi,2) + Math.pow(that.touchHi,2)) ).toFixed(2);
+
 			// 回掉刚触摸
-			// document.querySelector(".fix").innerHTML = e.targetTouches.length + " s";
 			that._callBack(that.option.touchStartFunc);
 		},false)
 
@@ -217,7 +223,6 @@
 				// 执行移动
 				that._Transform(that.rOption.translateSum, that.rOption.rotateEnd, that.rOption.scaleEnd);
 			}	
-			// document.querySelector(".fix").innerHTML = e.targetTouches.length + " m";	
 			// 回掉触摸中
 			that._callBack(that.option.touchMoveFunc);
 		},false);
@@ -228,7 +233,6 @@
 			that.rOption.translateEnd[1] = that.rOption.translateSum[1];
 			that.rOption.rotateEnd = that.rOption.rotateSum;
 			that.rOption.scaleEnd = that.rOption.scaleSum;	
-			document.querySelector(".fix").innerHTML = e.targetTouches.length + " e";	
 			// 恢复是否双指 为 false
 			if(e.targetTouches.length == 0){
 				that.rOption.isDouble = false;
@@ -236,28 +240,6 @@
 				that._callBack(that.option.touchEndFunc);
 			}	
 		},false)
-
-		// 保存
-		if(that.option.btnConfirm){
-			that.option.btnConfirm.onclick = function(){
-				if(that.rOption.imgLen == 1){
-					that._cuttingImg();
-					that.Refresh();		
-					// 回掉保存
-					that._callBack(that.option.saveFunc);
-				}		
-			}
-		}
-
-		// 取消
-		if(that.option.btnCancel){
-			that.option.btnCancel.onclick = function(){
-				// 还原
-				that.Refresh();
-				// 回掉取消
-				that._callBack(that.option.cancelFunc);
-			}
-		}
 	}
 
 
@@ -294,32 +276,37 @@
 			var that = this;
 			that.img_wi = imgBg.width;
 			that.img_hi = imgBg.height;
-			// 自定义了压缩 宽
-			if(that.option.setLoadWi && !that.option.setLoadHi){
-				that.img_wi = that.option.setLoadWi;
-				that.img_hi = imgBg.height / (imgBg.width / that.img_wi);
-			}
-			// 自定义了压缩高
-			else if(!that.option.setLoadWi && that.option.setLoadHi){
-				that.img_hi = that.option.setLoadHi;
-				that.img_wi = imgBg.width / (imgBg.height / that.img_hi);
-			}
-			// 都设，扭曲
-			else if(that.option.setLoadHi && that.option.setLoadWi){
-				// 扭曲变形
-				that.img_wi = that.option.setLoadWi;
-				that.img_hi = that.option.setLoadHi;
-			}
-			// 都不设，根据框来调整
-			else if(!that.option.setLoadHi && !that.option.setLoadWi){
-				if(that.img_wi / that.option.setCutWi > that.img_hi / that.option.setCutHi){
-					that.img_hi = that.option.setCutHi * that.option.setLoadZoom;
-					that.img_wi = imgBg.width / (imgBg.height / that.img_hi);
-				}else{
-					that.img_wi = that.option.setCutWi *that.option.setLoadZoom;
+			// 如果不需要裁剪 或者多图
+			if(that.option.unCut == true || that.rOption.imgLen > 1){
+				// 自定义了压缩 宽
+				if(that.option.setLoadWi && !that.option.setLoadHi){
+					that.img_wi = that.option.setLoadWi;
 					that.img_hi = imgBg.height / (imgBg.width / that.img_wi);
 				}
-				
+				// 自定义了压缩高
+				else if(!that.option.setLoadWi && that.option.setLoadHi){
+					that.img_hi = that.option.setLoadHi;
+					that.img_wi = imgBg.width / (imgBg.height / that.img_hi);
+				}
+				// 都设，按哪个大来
+				else if(that.option.setLoadWi && that.option.setLoadHi){
+					if(that.img_wi / that.option.setLoadWi > that.img_hi / that.option.setLoadHi){
+						that.img_wi = that.option.setLoadWi
+						that.img_hi = imgBg.height / (imgBg.width / that.img_wi);
+					}else{
+						that.img_hi = that.option.setLoadHi;
+						that.img_wi = imgBg.width / (imgBg.height / that.img_hi);
+					}
+				}
+			}else{
+				// 如果要裁剪，通过缩放，把页面 填满
+				if(that.img_wi / that.option.setViewWi < that.img_hi / that.option.setViewHi){
+					var loadScale = that.img_wi / that.option.setViewWi;
+				}else{
+					var loadScale = that.img_hi / that.option.setViewHi;
+				}
+				that.rOption.scaleSum = parseFloat((that.rOption.scaleEnd / loadScale).toFixed(2));
+				that.rOption.scaleEnd = that.rOption.scaleSum;
 			}
 
 			imgBg.width = that.img_wi;
@@ -391,14 +378,15 @@
 		// 裁剪
 		_cuttingImg: function(){
 			var that = this;
+			var cutRatio = that.setCutWi / that.setViewWi;   //截取和可视的比例
 			var new_width  = that.pic.width * that.rOption.scaleEnd;	
 			var new_height  = that.pic.height * that.rOption.scaleEnd;
 			var new_x  = (that.pic.width - new_width) / 2 + that.rOption.translateEnd[0];		
 			var new_y  = (that.pic.height - new_height) / 2 + that.rOption.translateEnd[1];
 			
-			that.canvas.width = that.option.setCutWi;
-			that.canvas.height = that.option.setCutHi;
-		 	that.ctx.clearRect (0, 0, that.option.setCutWi, that.option.setCutHi);
+			that.canvas.width = that.option.setViewWi;
+			that.canvas.height = that.option.setViewHi;
+		 	that.ctx.clearRect (0, 0, that.option.setViewWi, that.option.setViewHi);
 		 	var rtsX = new_width / 2 + new_x;	
 		 	var rtsY = new_height / 2 + new_y;
 		 	that.ctx.translate(rtsX,rtsY);
@@ -408,14 +396,40 @@
 			that.rOption.urls[0].cutUrl = that.canvas.toDataURL("image/"+that.option.imgType, 1);		
 		},
 
+		// 返回给外部
+		_returnView: function(){
+			var that = this;
+			that.viewOption = JSON.parse( JSON.stringify(that.rOption) ); //传给输出
+		},
+
 		// 回调
 		_callBack: function(c){
 			if(c && typeof(c) == "function") c();
 		},
 
+		// 调用保存
+		callSaveCutting: function(){
+			var that = this;
+			if(that.rOption.imgLen == 1){
+				that._cuttingImg();
+				that._returnView();
+				that.Refresh();		
+				// 回掉保存
+				that._callBack(that.option.saveFunc);
+			}	
+		},
+
+		// 调用取消
+		callCancelCutting: function(){
+			var that = this;
+			// 还原
+			that.Refresh();
+			// 回掉取消
+			that._callBack(that.option.cancelFunc);	
+		},
+
 		Refresh: function(){
 			var that = this;
-			that.viewOption = JSON.parse( JSON.stringify(that.rOption) ); //传给输出
 			// 控制层恢复初始
 			that.rOption.translateNow = [0,0];	//本次移动数组集
 			that.rOption.translateSum = [0,0];	//本次 + 已移动的书足迹	
