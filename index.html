@@ -42,51 +42,74 @@
 	</div>
 	
 	<script type="text/javascript">
+		// 这些都没啥子关系的
+		var $ = function(c){
+			return document.querySelector(c);
+		}
 
 		// 获取隐藏元素宽高部分就不写了，，自己用jq或者自己写个方法
-		var Wi = parseFloat(document.querySelector(".touchDiv").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
-		var Hi = parseFloat(document.querySelector(".touchDiv").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
-		document.querySelector(".touchDiv").style.width = Wi + "px";
-		document.querySelector(".touchDiv").style.height = Hi + "px";
+		var Wi = parseFloat($(".touchDiv").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+		var Hi = parseFloat($(".touchDiv").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
+		$(".touchDiv").style.width = Wi + "px";
+		$(".touchDiv").style.height = Hi + "px";
 
-		// 这才是正文
-		var yuanpic = document.getElementById("yuanpic");
+		/*--------------------------------分割线下 才是正文---------------------------------------------*/
+
+		var yuanpic = $("#yuanpic");   //假装输出的容器
+		var myPic;					 
 		yuanpic.onclick =function(){  
-			var myPic = new pCutting({
+			myPic = new pCutting({
 				boxname: "#head_picbox",
 				input: "#head_file",
 				touchObj: ".touchDiv",
-				setLoadZoom: 1.05,
 				setCutWi: Wi,
-				setCutHi: Hi,
-				btnConfirm: "#btnConfirm",
-				btnCancel: "#btnCancel",		
-				fileChangeFunc: function(){	 //图片加载中回调
+				setCutHi: Hi,	
+				autoSize: true,
+				//图片加载中回调
+				fileChangeFunc: function(){	
 					loading.style.display = "block";
 				},
-				fileLoadEnd: function(){	//图片加载完回调
+				// 文件初次压缩完回调
+				fileLoadEnd: function(){
 					loading.style.display = "none";
 					if(myPic.viewOption.imgLen == 1){
-						fixbox.style.display = "block";
+						$("#fixbox").style.display = "block";
 					}else{
 						var h = "";
 						for(var l=0; l<myPic.viewOption.imgLen; l++){
 							h += '<img src="'+ myPic.viewOption.urls[l].newUrl +'">';
 						}
-						document.querySelector(".viewList").innerHTML = h;
+						$(".viewList").innerHTML = h;
 						alert("您选择了 "+myPic.viewOption.urls.length+" 张，多选是无法裁剪的");
 					}	
 				},
+				// 触摸中回调
+				touchMoveFunc: function(){
+					// 触摸中输出
+					var vo = myPic.viewOption;
+					$(".fix").innerHTML = "X: "+vo.translateSum[0] +"  Y: " +vo.translateSum[1]+ "  ROT: " +vo.rotateSum+ "  SCALE: "+vo.scaleSum;
+				},
+				// 保存回调
 				saveFunc: function(){
-					fixbox.style.display = "none";
+					$("#fixbox").style.display = "none";
 					yuanpic.src = myPic.viewOption.urls[0].cutUrl;
 					console.log(myPic.viewOption);
 				},
+				// 取消回调
 				cancelFunc: function(){
 					fixbox.style.display = "none";
 				}
 			})
 		};
+		// 调用保存
+		$("#btnConfirm").onclick = function(){
+			myPic.callSaveCutting();
+		}
+		// 调用取消
+		$("#btnCancel").onclick = function(){
+			myPic.callCancelCutting();
+		}
+		
 	</script>
 </div>
 </body>
