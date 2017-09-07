@@ -32,7 +32,7 @@
 	<div class="fixbox" id="fixbox">
 		<input type="file" id="head_file" multiple="multiple" tips="文件框">
 		<div class="headbox">
-			<div class="head_picbox" id="head_picbox" tips="就是这个容器装的"></div>
+			<div class="head_picbox" id="head_picbox"  tips="就是这个容器装的"></div>
 			<div class="touchDiv" style="width: 6.4rem; height: 6.4rem;" tips="触摸板"></div>
 		</div>	
 		<div class="btnbox">
@@ -42,7 +42,6 @@
 	</div>
 	
 	<script type="text/javascript">
-		// 这些都没啥子关系的
 		var $ = function(c){
 			return document.querySelector(c);
 		}
@@ -50,32 +49,25 @@
 		// 获取隐藏元素宽高部分就不写了，，自己用jq或者自己写个方法
 		var Wi = parseFloat($(".touchDiv").style.width) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
 		var Hi = parseFloat($(".touchDiv").style.height) * parseFloat(document.getElementsByTagName('html')[0].style.fontSize);
-		$(".touchDiv").style.width = Wi + "px";
-		$(".touchDiv").style.height = Hi + "px";
 
-		/*--------------------------------分割线下 才是正文---------------------------------------------*/
-
-		var yuanpic = $("#yuanpic");   //假装输出的容器
-		var myPic;					 
+		// 这才是正文
+		var yuanpic = document.getElementById("yuanpic");
+		var myPic;
 		yuanpic.onclick =function(){  
 			myPic = new pCutting({
 				boxname: "#head_picbox",
 				input: "#head_file",
 				touchObj: ".touchDiv",
-				setCutWi: Wi,
-				setCutHi: Hi,	
-				btnConfirm: "#btnConfirm",
-				btnCancel: "#btnCancel",
-// 				autoSize: true,
-				//图片加载中回调
-				fileChangeFunc: function(){	
+				setViewWi: Wi,
+				setViewHi: Hi,
+				setCutWi: 640,  //这个是 截取的宽，不一定和 看到的是一样的   暂时还没开发
+				fileChangeFunc: function(){	 //图片加载中回调
 					loading.style.display = "block";
 				},
-				// 文件初次压缩完回调
-				fileLoadEnd: function(){
+				fileLoadEnd: function(){	//图片加载完回调
 					loading.style.display = "none";
 					if(myPic.viewOption.imgLen == 1){
-						$("#fixbox").style.display = "block";
+						fixbox.style.display = "block";
 					}else{
 						var h = "";
 						for(var l=0; l<myPic.viewOption.imgLen; l++){
@@ -85,18 +77,24 @@
 						alert("您选择了 "+myPic.viewOption.urls.length+" 张，多选是无法裁剪的");
 					}	
 				},
-				// 保存回调
 				saveFunc: function(){
-					$("#fixbox").style.display = "none";
+					fixbox.style.display = "none";
 					yuanpic.src = myPic.viewOption.urls[0].cutUrl;
 					console.log(myPic.viewOption);
 				},
-				// 取消回调
 				cancelFunc: function(){
-					$("#fixbox").style.display = "none";
+					fixbox.style.display = "none";
 				}
 			})
 		};
+
+		$("#btnConfirm").onclick = function(){
+			myPic.callSaveCutting();
+		}
+
+		$("#btnCancel").onclick = function(){
+			myPic.callCancelCutting();
+		}
 	</script>
 </div>
 </body>
