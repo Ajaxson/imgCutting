@@ -344,7 +344,7 @@
 			var that = this;
 			var startDistance = that._getDistance(startTouch[0],startTouch[1]);
 			var nowDistance = that._getDistance(moveTouch[0],moveTouch[1]);
-			var nowScaleRatio = (nowDistance - startDistance) / objLong * 2;
+			var nowScaleRatio = (nowDistance - startDistance) / objLong * 1.2;
 			return  nowScaleRatio.toFixed(3); 
 		},
 
